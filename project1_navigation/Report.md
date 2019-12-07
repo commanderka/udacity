@@ -28,7 +28,7 @@ fully connected layers. If the input would consist of RGB images we would need a
 
 ## Hyperparameters used
 * Start value of epsilon: 1.0 (the start value has to be high as the task demands a high extent of exploration of the environment)
-* End value of epsilon:  0.01
+* End value of epsilon:  0.01 (we still want to select random actions and ever stop exploration of the environment)
 * Epsilon decay: 0.999 (the decay factor has to be high, as we want to keep a high extent of exploration over the episodes. Otherwise we could get stuck in local minima)
 * Size of hidden layers of the neural net: 256-128 (this was the first shot and works well)
 * tau (for weight transfer of local and target network) : 0.001
