@@ -1,13 +1,16 @@
 # Project Report
 ## Learning Algorithm
 The used learning algorithm implements Deep Q Learning from the Google Atari paper. The idea is to approximate the Q value of a state-action pair with a neural network.
+
 The algorithm is applicable here, because the state space is continuous, we have a discrete set of actions and obtain a reward and the next state from the environment after taking an action.
 In every iteration we sample a set of (state,action,next_state, reward) tuples which we add to our
 replay memory. The selection of actions is done in an epsilon greedy way, i.e. that we choose a random action with probability epsilon and with probability 1-epsilon we select the action which gives
 us the maximum expected reward using the current Q network.
+
 In the current implementation a queue with the capacity of 10000 is used for the replay memory storage, but I also experimented with an implementation of prioritized experience replay. The idea
 here is to prioritize the samples leading to a larger error value with respect to the current Q network prediction, as it is assumed that learning is faster because of higher information
 content of these samples.
+
 The gradient update is based on the mean squared error loss (i.e. the squared difference between the predicted reward of the network and the "ground truth" reward obtained from a random batch of sampled observations from the replay memory).
 In order to make the training more stable the algorithm makes use of two neural networks (prediction and target network) with identical architecture. The prediction network is updated in every iteration while the target network (used for computing the expected reward
 of the next state from the environment observation tuple) is kept fixed for a number of iterations. After this number of steps the weights are transferred. The whole process makes the training more stable, such that
