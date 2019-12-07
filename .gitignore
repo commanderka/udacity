@@ -1,0 +1,5 @@
+*.exe
+*.dll
+*.log
+*.pyc
+Banana_Data/
