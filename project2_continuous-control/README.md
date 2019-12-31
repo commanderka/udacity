@@ -13,3 +13,4 @@ The environment is considered as solved if the agent is possible to get an avera
 # Instructions
 * run train.py to start training. After training has finished the trained model checkpoints are stored in the checkpoints folder, the plot is shown and stored as rewardGraph.png.
 Furthermore a simulation of the agent is run in test mode using the best actor net.
+* alternatively the notebook train.ipynp can be used
