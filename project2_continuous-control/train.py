@@ -35,32 +35,9 @@ if __name__=='__main__':
     scores = np.zeros(num_agents)  # initialize the score (for each agent)
 
     ddpgAgent = ddpg.DDPG(env,env_info,brain_name)
-    actionsTaken = 0
-    '''
-    while True:
-        actions = np.random.randn(num_agents, action_size)
-        print(actions)
-        # select an action (for each agent)
-        actions = np.clip(actions, -1, 1)  # all actions between -1 and 1
-        env_info = env.step(actions)[brain_name]  # send all actions to tne environment
-        actionsTaken +=1
-        next_states = env_info.vector_observations  # get next state (for each agent)
-        rewards = env_info.rewards  # get reward (for each agent)
-        dones = env_info.local_done  # see if episode finished
-        scores += env_info.rewards  # update the score (for each agent)
-        states = next_states  # roll over states to next time step
-        if np.any(dones):  # exit loop if episode finished
-            print("Actions taken:{0}".format(actionsTaken))
-            break
-    '''
-
-
-
-    print('Total score (averaged over agents) this episode: {}'.format(np.mean(scores)))
-
     ddpgAgent.train()
-
-
+    ddpgAgent.plotRewardGraph()
+    ddpgAgent.runTrainedAgent()
 
     env.close()
 

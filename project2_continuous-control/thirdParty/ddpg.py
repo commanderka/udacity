@@ -4,12 +4,15 @@ Author: Sameera Lanka
 Website: https://sameera-lanka.com
 """
 
+#adaptions by ckalla
+
 # Torch
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
 import torch.optim as optim
 from collections import deque
+from matplotlib import pyplot as plt
 
 
 # Lib
@@ -29,31 +32,14 @@ ACTOR_LR = 1e-4
 CRITIC_LR = 1e-4
 MINIBATCH_SIZE = 128
 NUM_EPISODES = 10000
-MU = 0
 SIGMA = 0.2
-CHECKPOINT_DIR = './checkpoints/manipulator/'
+CHECKPOINT_DIR = './checkpoints/'
 BUFFER_SIZE = 100000
 DISCOUNT = 0.99
 TAU = 0.001
 WARMUP = 256
 NETWORKUPDATEINTERVAL = 100
 UPDATESTEPSPERUPDATEINTERVAL = 10
-
-
-'''
-def obs2state(observation):
-    """Converts observation dictionary to state tensor"""
-    l1 = [val.tolist() for val in list(observation.values())]
-    l2 = []
-    for sublist in l1:
-        try:
-            l2.extend(sublist)
-        except:
-            l2.append(sublist)
-    return torch.FloatTensor(l2).view(1, -1)
-'''
-
-
 
 class DDPG:
     def __init__(self, env, env_info, brain_name):
@@ -78,8 +64,12 @@ class DDPG:
         self.rewardgraph = []
         self.start = 0
         self.end = NUM_EPISODES
+        if not os.path.exists(self.checkpoint_dir):
+            os.makedirs(self.checkpoint_dir)
+
         
 
+    #soft update target network with parameter tau
     def updateTargets(self, target, original):
         """Weighted average update of the target network and original network
             Inputs: target actor(critic) and original actor(critic)"""
@@ -87,30 +77,37 @@ class DDPG:
         for targetParam, orgParam in zip(target.parameters(), original.parameters()):
             targetParam.data.copy_((1 - TAU)*targetParam.data + TAU*orgParam.data)
 
-            
-  
-    def getMaxAction(self, currentState):
-        """Inputs: Current state of the episode
-            Returns the action which maximizes the Q-value of the current state-action pair"""
-        noise = Variable(torch.FloatTensor(self.noise()), volatile=True).cuda()
-        currentState_torch = Variable(torch.FloatTensor(currentState).view(1, -1), volatile=True).cuda()
-        action = self.actor(currentState_torch)
-        actionNoise = action + noise
-        return actionNoise
-        
-        
-    def train(self):
-        if not os.path.exists(self.checkpoint_dir):
-            os.makedirs(self.checkpoint_dir)
-        else:
-            checkpointFiles = os.listdir(self.checkpoint_dir)
-            checkpointList = list(map(lambda x: int(x[2:].split(".")[0]),checkpointFiles))
-            checkpointList.sort()
-            largestCheckpoint  = checkpointList[-1]
-            self.loadCheckpoint(os.path.join(self.checkpoint_dir,"ep{0}.pth.tar".format(largestCheckpoint)))
 
-            
+    def loadExistingCheckPoint(self):
+        checkpointFiles = os.listdir(self.checkpoint_dir)
+        checkpointList = list(map(lambda x: int(x[2:].split(".")[0]), checkpointFiles))
+        checkpointList.sort()
+        largestCheckpoint = checkpointList[-1]
+        self.loadCheckpoint(os.path.join(self.checkpoint_dir, "ep{0}.pth.tar".format(largestCheckpoint)))
+
+    def runTrainedAgent(self,nSteps=10000):
+        self.loadExistingCheckPoint()
+        env_info = self.env.reset(train_mode=False)[self.brain_name]
+        currentState = env_info.vector_observations[0]
+
+        for i in range(nSteps):
+            self.actor.eval()
+            # action = self.getMaxAction(currentState)
+            with torch.no_grad():
+                currentState_expanded = np.expand_dims(currentState, axis=0)
+                currentStateTensor = Variable(torch.FloatTensor(currentState_expanded), volatile=True).cuda()
+                action = self.actor(currentStateTensor)
+                action = torch.clamp(action, min=-1, max=1)
+            action_numpy = action.data.cpu().numpy()
+            env_info = self.env.step(action_numpy)[self.brain_name]
+            next_state = env_info.vector_observations[0]
+            currentState = next_state
+
+    def train(self, resumeTraining=False):
         print('Training started...')
+        if resumeTraining:
+            print("Resuming training")
+            self.loadExistingCheckPoint()
 
         epochRewards = deque(maxlen=100)
 
@@ -122,8 +119,6 @@ class DDPG:
             ep_reward = 0
             actionsTaken = 0
             while not done:
-
-
                 self.actor.eval()
                 #action = self.getMaxAction(currentState)
                 with torch.no_grad():
@@ -149,27 +144,35 @@ class DDPG:
                 currentState = next_state  # roll over states to next time step
                 
                 # Training loop
+                #check if replay buffer contains enough samples
                 if len(self.replayBuffer) >= self.warmup:
+                    #do backward prop only every NETWORKUPDATEINTERVAL steps
                     if actionsTaken % NETWORKUPDATEINTERVAL == 0:
+                        #do UPDATESTEPSPERUPDATEINTERVAL updates
                         for nStep in range(UPDATESTEPSPERUPDATEINTERVAL):
+                            #sample batch from replay memory
                             curStateBatch, actionBatch, nextStateBatch, rewardBatch, terminalBatch = self.replayBuffer.sample_batch(self.batchSize)
                             qPredBatch = self.critic(curStateBatch, actionBatch)
+                            #use target actor network to get next action
                             actions_next = self.targetActor(nextStateBatch)
-                            Q_targets_next = self.targetCritic(nextStateBatch, actions_next)
-                            qTargetBatch = rewardBatch + (DISCOUNT * Q_targets_next * (1 - terminalBatch))
-                            #qTargetBatch = self.getQTarget(nextStateBatch, rewardBatch, terminalBatch)
+                            #use target critic network to get q value for next (state,action) tuple
+                            q_targets_next = self.targetCritic(nextStateBatch, actions_next)
+                            #compute the groundtruth q value by summing the current return and the discounted future return (bellman equation)
+                            qTargetBatch = rewardBatch + (DISCOUNT * q_targets_next * (1 - terminalBatch))
 
                         # Critic update
                             self.criticOptim.zero_grad()
                             criticLoss = self.criticLoss(qPredBatch, qTargetBatch)
                             #print('Critic Loss: {}'.format(criticLoss))
                             criticLoss.backward()
+                            #gradient clipping ensures that we do not encounter strange behaviour in later training stages
                             torch.nn.utils.clip_grad_norm_(self.critic.parameters(), 1)
 
                             self.criticOptim.step()
 
                         # Actor update
                             self.actorOptim.zero_grad()
+                            #the actor loss is the negative value estimate of the critic given the current state and the action estimated by the actor network
                             actorLoss = -torch.mean(self.critic(curStateBatch, self.actor(curStateBatch)))
                             #print('Actor Loss: {}'. format(actorLoss))
                             actorLoss.backward()
@@ -182,11 +185,13 @@ class DDPG:
             epochRewards.append(ep_reward)
             if len(epochRewards) >= 100:
                 averageReward = sum(epochRewards)/len(epochRewards)
+                #environment is solved if the average score over the last 100 epochs exceeds 30
                 if averageReward > 30.0:
                     self.save_checkpoint(i)
                     print("Task solved within {0} epochs!".format(i))
                     break
-            if i % 20 == 0:
+            #save checkpoints every 100 iterations
+            if i % 100 == 0:
                 self.save_checkpoint(i)
             self.rewardgraph.append(ep_reward)
 
@@ -223,4 +228,13 @@ class DDPG:
             print('Checkpoint loaded')
         else:
             raise OSError('Checkpoint not found')
+
+    def plotRewardGraph(self):
+        xlabel = range(0,len(self.rewardgraph))
+        plt.plot(xlabel,self.rewardgraph)
+        plt.xlabel("Epoch")
+        plt.ylabel("Reward")
+        plt.savefig("rewardGraph.png")
+        plt.imshow()
+
 

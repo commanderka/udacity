@@ -1,6 +1,5 @@
 # Project details
-The environment consists of yellow and green bananas. The goal is to program and agent that collects as much yellow bananas as possible while avoiding to collect blue bananas.
-Yellow bananas give a reward of +1 while blue ones give a negative reward of -1.
+
 ## State space
 The state space is a vector with 33 dimensions, representing perceptual information of the environment the agent is currently observing. This is a simplification, the agent could
 be trained with image input as well. However, the neural network would be a bit more complicated then, containing convolution layers at the beginning.

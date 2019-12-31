@@ -10,52 +10,59 @@ I applied slight modifications of the algorithm in my implementation:
 * Gradient updates are not done in every iteration, but only when sufficient number of samples have been added (NETWORKUPDATEINTERVAL)
 * During each update UPDATESTEPSPERUPDATEINTERVAL are performed on randomly sampled batches from the replay memory
 
+As a baseline I used the implementation from Samira Lanka (https://github.com/samlanka/DDPG-PyTorch) which is under MIT license. I adapted this implementation such it works with the
+provided environment.
 
-The algorithm is applicable here, because the state space is continuous, we have a discrete set of actions and obtain a reward and the next state from the environment after taking an action.
-In every iteration we sample a set of (state,action,next_state, reward) tuples which we add to our
-replay memory. The selection of actions is done in an epsilon greedy way, i.e. that we choose a random action with probability epsilon and with probability 1-epsilon we select the action which gives
-us the maximum expected reward using the current Q network.
-
-In the current implementation a queue with the capacity of 10000 is used for the replay memory storage, but I also experimented with an implementation of prioritized experience replay. The idea
-here is to prioritize the samples leading to a larger error value with respect to the current Q network prediction, as it is assumed that learning is faster because of higher information
-content of these samples.
-
-The gradient update is based on the mean squared error loss (i.e. the squared difference between the predicted reward of the network and the "ground truth" reward obtained from a random batch of sampled observations from the replay memory).
-In order to make the training more stable the algorithm makes use of two neural networks (prediction and target network) with identical architecture. The prediction network is updated in every iteration while the target network (used for computing the expected reward
-of the next state from the environment observation tuple) is kept fixed for a number of iterations. After this number of steps the weights are transferred. The whole process makes the training more stable, such that
-faster convergence is reached. Weight update can also be achieved with a soft update using parameter tau which is used in this implementation.
-I found out that the size of the replay memory buffer, epsilon and epsilon decay and the decision if hard or soft updates are used has a crucial impact on the overall algorithm performance.
+As the action space is no longer discrete the "standard" epsilon-greedy action selection does no longer work. Instead some noise is added to each action using a defined noise process.
+In this implementation the Ornstein-Uhlenbeck-Prozess (https://de.wikipedia.org/wiki/Ornstein-Uhlenbeck-Prozess) is used, but also other noise processes are possible. The amount of noise
+added is crucial for convergence of the algorithm, so it makes sense to do a lot of hyperparameter tuning here.
 
 The network structure is quite simple, perhaps it could be optimized by more sophisticated parameter tuning. It looks as follow:
+
 Critic network (Input: (state,action), Output: value)
 
 * Dense layer - input: 33 (state size) output: 256
-* Dense layer - input: 256 output 128
-* Dense layer - input: 128 output: 1
+* Batchnorm layer - input: 256 output: 256
+* ReLU layer - input:256 output:256
+* Dense layer - input: 256 + 4 (action size) = 260 output 128
+* ReLU layer - input:128 output:128
+* Dense layer - input: 128 output: 1 (Q value)
 
 Actor network (Input: state, Output: action)
 
-* Dense layer - input: 33 (state size) output: 256
+* Batchnorm layer - input: 33 (state size) output: 33
+* ReLU layer - input:33 output:33
+* Dense layer - input: 33 output: 256
+* Batchnorm layer - input: 256 output: 256
+* ReLU layer - input:256 output:256
 * Dense layer - input: 256 output 128
+* Batchnorm layer - input: 128 output: 128
+* ReLU layer - input:128 output:128
 * Dense layer - input: 128 output: 4
+* Tanh activation layer - input: 4 output: 4
 
-As activation functions ReLU is used which is the standard activation function for most deep learning tasks. As the state space has only 37 dimension it is sufficient to only use
-fully connected layers. If the input would consist of RGB images we would need additional convolution layers.
+Batchnorm layers are used to facilitate convergence. Using these layers is a state of the art practice in most machine learning tasks.
+As activation functions ReLU is used which is the standard activation function for most deep learning tasks. As the state space has only 33 dimension it is sufficient to only use
+fully connected layers. The last activation function is a tanh function, as the output actions have to be normalized between -1 and 1.
 
 ## Hyperparameters used
-* Start value of epsilon: 1.0 (the start value has to be high as the task demands a high extent of exploration of the environment)
-* End value of epsilon:  0.01 (we still want to select random actions and ever stop exploration of the environment)
-* Epsilon decay: 0.999 (the decay factor has to be high, as we want to keep a high extent of exploration over the episodes. Otherwise we could get stuck in local minima)
+
 * Size of hidden layers of the neural net: 256-128 (this was the first shot and works well)
 * tau (for weight transfer of local and target network) : 0.001
-* Batch Size: 64 (could also be 32, makes not much difference for this task I guess)
+* Batch Size: 128 (I set it a bit higher to stabilize the training)
 * Discount Factor: 0.99
-* Learning rate of Adam solver: 0.001 (works best for a lot of machine learning tasks, also in this case)
+* Learning rate of Adam solver for actor and critic network: 0.0001
+* Buffer size of the replay buffer: 100000
+* Sigma parameter for OrnsteinUhlenbeckActionNoise process: 0.2 (worked better than larger values for this task)
+* Network update interval: 100 (update steps are only performed every 100 iterations, the rest of the time only sampling of the environment is performed)
+* Update steps per update interval: 10 (number of gradiend descent steps run within each update step on random batches)
+
 
 ## Results
- ![]( plots/scoresPerEpisode.png)
+ ![]( plots/rewardGraph.png)
 
 ## Future work
-* Implement prioritized experience replay (per.py already contains a github implementation, but for this environment it did not speed up training, or I made a mistake when using it...)
-* Find out why the Keras implementation converges slower than the pytorch one
-* Learn directly from the input images and not from the low dim observation state vector
+* Convergence seems to be a bit too slow and there is too much oscillation. One could to hyperparameter tuning to speed up training and reduce noise.
+* Implement prioritized experience replay
+* Solve the 20 agent environment (the adaptions to sample from multiple agents in parallel should be quite simple). This should also speed up training as exploration of the environment is faster.
+* Experiment with other algorithms such as PPO to solve the environment.
