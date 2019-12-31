@@ -55,7 +55,7 @@ fully connected layers. The last activation function is a tanh function, as the 
 * Buffer size of the replay buffer: 100000
 * Sigma parameter for OrnsteinUhlenbeckActionNoise process: 0.2 (worked better than larger values for this task)
 * Network update interval: 100 (update steps are only performed every 100 iterations, the rest of the time only sampling of the environment is performed)
-* Update steps per update interval: 10 (number of gradiend descent steps run within each update step on random batches)
+* Update steps per update interval: 10 (number of gradient descent steps run within each update step on random batches)
 
 
 ## Results
