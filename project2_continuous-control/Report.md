@@ -59,7 +59,7 @@ fully connected layers. The last activation function is a tanh function, as the 
 
 
 ## Results
- ![]( plots/rewardGraph.png)
+ ![](rewardGraph.png)
 
 ## Future work
 * Convergence seems to be a bit too slow and there is too much oscillation. One could to hyperparameter tuning to speed up training and reduce noise.
