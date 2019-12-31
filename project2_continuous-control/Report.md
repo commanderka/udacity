@@ -66,3 +66,4 @@ fully connected layers. The last activation function is a tanh function, as the 
 * Implement prioritized experience replay
 * Solve the 20 agent environment (the adaptions to sample from multiple agents in parallel should be quite simple). This should also speed up training as exploration of the environment is faster.
 * Experiment with other algorithms such as PPO to solve the environment.
+* Use (discounted) epsilon to reduce OU noise in each iteration, such the influence of noise gets less for later episodes.
