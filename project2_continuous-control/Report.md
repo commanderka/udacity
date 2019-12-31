@@ -61,6 +61,8 @@ fully connected layers. The last activation function is a tanh function, as the 
 ## Results
  ![](rewardGraph.png)
 
+ The environment was solved after 423 epochs.
+
 ## Future work
 * Convergence seems to be a bit too slow and there is too much oscillation. One could to hyperparameter tuning to speed up training and reduce noise.
 * Implement prioritized experience replay
