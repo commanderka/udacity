@@ -235,6 +235,6 @@ class DDPG:
         plt.xlabel("Epoch")
         plt.ylabel("Reward")
         plt.savefig("rewardGraph.png")
-        plt.imshow()
+        plt.show()
 
 
