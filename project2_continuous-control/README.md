@@ -7,7 +7,7 @@ Each action is a vector with four numbers, corresponding to torque applicable to
 ## Solving the environment
 The environment is considered as solved if the agent is possible to get an average reward of +30 within 100 episodes
 ## Getting started
-* Install the Reacher single agent environment environment provided by Udacity (i.e. move the binaries and the Banana_Data folder into the source folder)
+* Install the Reacher single agent environment environment provided by Udacity (i.e. move the binaries and the Reacher_Data folder into the source folder)
 * Install pytorch
 * Install matplotlib for result visualization
 # Instructions
