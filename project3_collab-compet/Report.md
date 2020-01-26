@@ -12,12 +12,12 @@ The algorithm in pseudocode looks as follows:
 
 The network structure of the actor and critic networks are similar to the architecture I used for the continuous control task:
 
-Critic network (Input: (state*2,action*2), Output: value)
+Critic network (Input: (state \* 2,action \* 2), Output: value)
 
-* Dense layer - input: 2 $\times$ 24 (2* state size) output: 256
+* Dense layer - input: 2 \* 24 (2 \* state size) output: 256
 * Batchnorm layer - input: 256 output: 256
 * ReLU layer - input:256 output:256
-* Dense layer - input: 256 + 2*2 (2* action size) = 260 output 128
+* Dense layer - input: 256 + 2 \* 2 (2 \* action size) = 260 output 128
 * ReLU layer - input:128 output:128
 * Dense layer - input: 128 output: 1 (Q value)
 
