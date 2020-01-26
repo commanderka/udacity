@@ -63,6 +63,7 @@ def main():
     solveThreshold = 0.5
 
     model_dir= os.getcwd()+"/model_dir"
+    plot_dir = os.getcwd()+"/plots"
     os.makedirs(model_dir, exist_ok=True)
 
 
@@ -161,7 +162,7 @@ def main():
         if meanScoreOver100Episodes > solveThreshold and trainMode:
             print("Environment solved in {0} episodes!".format(episode) )
             maddpg.saveModel(model_dir, episode)
-            plotRewardGraph(allScores, solveThreshold)
+            plotRewardGraph(plot_dir,allScores, solveThreshold)
             break
 
         if (episode+1) % 10 == 0 or episode == number_of_episodes-1:

@@ -103,7 +103,7 @@ def gumbel_softmax(logits, temperature=0.5, hard=False):
 def moving_average(x, w):
     return np.convolve(x, np.ones(w), 'valid') / w
 
-def plotRewardGraph(inputRewards,solveThreshold):
+def plotRewardGraph(plotDir,inputRewards,solveThreshold):
     plt.title("Reward plot for Udacity RL Tennis Environment")
     agent1Rewards = [element[0] for element in inputRewards]
     agent1Rewards_ma = moving_average(agent1Rewards,100)
@@ -118,5 +118,5 @@ def plotRewardGraph(inputRewards,solveThreshold):
     plt.ylabel("Rewards (running average over 100 episodes)")
     plt.legend(loc="center left")
     plt.axhline(linewidth=2, color='r', y=solveThreshold)
-    plt.savefig("scoresPerEpisode.png")
+    plt.savefig(os.path.join(plotDir,"scoresPerEpisode.png"))
     plt.show()
