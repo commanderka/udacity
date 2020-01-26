@@ -37,7 +37,7 @@ def main():
     # how many episodes to save policy and gif
     save_interval = 1000
     #specifies if training is done or a simulation of the trained agents
-    trainMode = False
+    trainMode = True
     #set noise to zero in train mode, otherwise we multiple the OU nouise with a factor of 8
     if not trainMode:
         noiseFactor = 0
@@ -143,11 +143,15 @@ def main():
             nSamplesAdded +=1
             currentObservation = next_observation
             if np.any(dones):
+                #episode is over, so append agent scores to overall scores and reset the counter of scores accumulated for the episode
+                allScores.append(scoresPerEpisode)
+                scoresPerEpisode = np.zeros(num_agents)
+                #break the loop if we have gathered enough samples
                 if nSamplesAdded > nSamplesToAdd:
                     break
                 env_info = env.reset(train_mode=trainMode)[brain_name]
                 currentObservation = env_info.vector_observations
-        allScores.append(scoresPerEpisode)
+
 
 
         # update once after every episode_per_update
@@ -172,7 +176,7 @@ def main():
             agent1_reward = []
 
         if episode % saveInterval == 0 and trainMode:
-            maddpg.saveModel(maddpg,model_dir,episode)
+            maddpg.saveModel(model_dir,episode)
 
 
 if __name__=='__main__':
