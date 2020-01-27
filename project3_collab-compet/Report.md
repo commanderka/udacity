@@ -76,7 +76,7 @@ repos also use the concatenation of all observations as actor input). I found my
 * Impelementation of other algorithms (such as PPO for this task)
 * Solve the football environment as well
 
-##References
+## References
 <a id="1">[1]</a>
-[1]: Lowe et al: Multi-Agent Actor-Critic for Mixed Cooperative-Competitive Environments, https://arxiv.org/pdf/1706.02275
+Lowe et al: Multi-Agent Actor-Critic for Mixed Cooperative-Competitive Environments, https://arxiv.org/pdf/1706.02275
 
