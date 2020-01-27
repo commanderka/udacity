@@ -1,15 +1,16 @@
 # Project Report
 ## Learning Algorithm
 
-I used the Deep Deterministic Policy Gradient algorithm for multiple agents (MADDPG). It works in the same way as the DDPG algorithm I applied for the continuous control task, but makes use of critics
+I used the Deep Deterministic Policy Gradient algorithm for multiple agents (MADDPG). It is applicable here, because we deal with multiple agents in an episodic environment with continuous action and state space.
+It works in the same way as the DDPG algorithm I applied for the continuous control task (please refer to a description of the DDPG algorithm here : [https://github.com/commanderka/udacity/blob/master/project2_continuous-control/Report.md]), but makes use of critics
 for each agent which also get the states and actions of the other agent as input. So there are two actor networks (local and target) as well as two critic networks for each agent. The actor only gets
-the local agent observation of the agent as input and predicts the best action, whereas the critic sees the concatentation of actions and states of all agents and predicts the value of the (state,action) tuple from the view
-of the current agent. The following figure illustrates this.
+the local agent observation of the agent as input and predicts the best action, whereas the critic sees the concatenation of actions and states of all agents and predicts the value of the (state,action) tuple from the view
+of the current agent. The following figure taken from [1] illustrates this.
 ![]( multi-agent-actor-critic.png)
 The algorithm in pseudocode looks as follows:
 ![]( maddpg_pseudocode.png)
 
-
+For exploration again an Ornstein Uhlenbeck Noise process is used ([https://en.wikipedia.org/wiki/Ornstein%E2%80%93Uhlenbeck_process]).
 The network structure of the actor and critic networks are similar to the architecture I used for the continuous control task:
 
 Critic network (Input: (state \* 2,action \* 2), Output: value)
@@ -37,8 +38,10 @@ Actor network (Input: state, Output: action)
 As activation functions ReLU is used which is the standard activation function for most deep learning tasks. Batchnorm layers are used for a more stable training.
 
 ### Implementation Details
+The implementation is based on the MADDPG implementation provided within the Udacity workbench. Furthermore I used the same implementation of OU noise and neural networks used in the continuous control task.
 I decided to gather 128 (number of the batch size) samples before doing an update. I had the impression that otherwise there is not enough information for the agents available to learn.
 Whenever an update is done it is done twice on two different random batches for each agent.
+In order to do more exploration of the action space at the beginning I multiply the Ornstein Uhlenbeck Noise by a factor of 8 at the beginning. This noise factor is reduced by multiplying it with a discount factor of 0.99 at the beginning of each episode.
 
 ### Training observations
 Hyperparameter tuning can be quite frustrating for this task. If this is not done right, the loss will oscillate and you question yourself if your implementation is wrong in general or if its really
@@ -57,7 +60,7 @@ repos also use the concatenation of all observations as actor input). I found my
 * Batch Size: 256
 * Discount Factor: 0.99
 * Sigma for OU Noise: 0.01
-* Theate for OU Noise: 0.15
+* Theta for OU Noise: 0.15
 * Learning rate of Adam solver for actor: 0.001
 * Learning rate of Adam solver for critic: 0.001
 * nSamplesToCollectBeforeUpdate: 128
@@ -68,7 +71,10 @@ repos also use the concatenation of all observations as actor input). I found my
  ![]( plots/scoresPerEpisode.png)
 
 ## Future work
-* Implement prioritized experience replay (per.py already contains a github implementation, but for this environment it did not speed up training, or I made a mistake when using it...)
+* Implement prioritized experience replay
 * Hyperparameter tuning for faster/more stable convergence
 * Impelementation of other algorithms (such as PPO for this task)
+* Solve the football environment as well
+
+[1]: Lowe et al: Multi-Agent Actor-Critic for Mixed Cooperative-Competitive Environments, https://arxiv.org/pdf/1706.02275
 
