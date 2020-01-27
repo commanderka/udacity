@@ -63,7 +63,7 @@ repos also use the concatenation of all observations as actor input). I found my
 * Theta for OU Noise: 0.15
 * Learning rate of Adam solver for actor: 0.001
 * Learning rate of Adam solver for critic: 0.001
-* nSamplesToCollectBeforeUpdate: 128
+* nSamplesToCollectBeforeUpdate: 256 (equal to batch size)
 * updateEvery: 1 (update every episode)
 * nUpdatesPerUpdateStep: 2
 
