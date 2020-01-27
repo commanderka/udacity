@@ -6,36 +6,13 @@ from maddpg import MADDPG
 import torch
 import numpy as np
 import os
-from utilities import transpose_list, transpose_to_tensor, plotRewardGraph
+from utilities import plotRewardGraph
 from unityagents import UnityEnvironment
-from collections import deque
-from matplotlib import pyplot as plt
-
-
-
-def seeding(seed=1):
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-
-def pre_process(entity, batchsize):
-    processed_entity = []
-    for j in range(3):
-        list = []
-        for i in range(batchsize):
-            b = entity[i][j]
-            list.append(b)
-        c = torch.Tensor(list)
-        processed_entity.append(c)
-    return processed_entity
-
 
 def main():
     # number of training episodes.
-    # change this to higher number to experiment. say 30000.
     number_of_episodes = 100000
     batchsize = 256
-    # how many episodes to save policy and gif
-    save_interval = 1000
     #specifies if training is done or a simulation of the trained agents
     trainMode = True
     #set noise to zero in train mode, otherwise we multiple the OU nouise with a factor of 8
@@ -45,7 +22,6 @@ def main():
         # amplitude of OU noise
         # this slowly decreases to 0
         noiseFactor = 8
-
     #factor by which the noise is reduced in each episode (the noise shall be large at the beginning and decrease as training progresses)
     noise_reduction = 0.99
     #defines the update frequency in episodes of the used neural networks
@@ -78,7 +54,7 @@ def main():
         print("Loading best pretrained weights...")
         maddpg.loadModel(os.path.join(model_dir,"episode-2000.pt"))
 
-    #init environment
+    #init environment (replace by environment le for your OS)
     env = UnityEnvironment(file_name="Tennis.exe")
     brain_name = env.brain_names[0]
     brain = env.brains[brain_name]
@@ -105,29 +81,24 @@ def main():
 
     for episode in range(0, number_of_episodes):
         noiseFactor = noiseFactor * noise_reduction
-        #print("Episode number: {0}".format(episode))
-
 
         #we sample a number of transitions before the updates are done
         #this ensures having a meaningful replay buffer such that update steps make sense
         nSamplesToAdd = batchsize
         nSamplesAdded = 0
-        # save info or not
-        nStep = 0
         env_info = env.reset(train_mode=trainMode)[brain_name]
         currentObservation = env_info.vector_observations
+
         scoresPerEpisode = np.zeros(num_agents)
         while (True):
-            # explore = only explore for a certain number of episodes
-            # action input needs to be transposed
 
             currentObservation_torch = torch.from_numpy(currentObservation).float().to(device)
             observationList = []
             observationList.append(currentObservation_torch[0].unsqueeze(0))
             observationList.append(currentObservation_torch[1].unsqueeze(0))
-
+            #compute actions of all agents given the current observation list
             actions = maddpg.act(observationList, noise=noiseFactor)
-
+            #actions values have to be between -1 and 1
             action1 = np.clip(actions[0].detach().cpu().numpy(),-1,1)
             action2 = np.clip(actions[1].detach().cpu().numpy(),-1, 1)
             actions_numpy = np.vstack((action1,action2))
@@ -139,6 +110,7 @@ def main():
             # add data to buffer
             next_observation = env_info.vector_observations
             transition = (currentObservation, actions_numpy, next_observation, rewards, dones)
+            #add current transition to replay buffer
             buffer.push(transition)
             nSamplesAdded +=1
             currentObservation = next_observation
@@ -163,17 +135,16 @@ def main():
                 maddpg.update_targets() #soft update the target network towards the actual networks
         maxRewards = [np.max(element) for element in allScores]
         meanScoreOver100Episodes = np.mean(maxRewards[-100:])
+        #check if environment has been solved and save model and plot reward graph in this case
         if meanScoreOver100Episodes > solveThreshold and trainMode:
             print("Environment solved in {0} episodes!".format(episode) )
             maddpg.saveModel(model_dir, episode)
             plotRewardGraph(plot_dir,allScores, solveThreshold)
             break
 
-        if (episode+1) % 10 == 0 or episode == number_of_episodes-1:
+        if (episode+1) % 100 == 0 or episode == number_of_episodes-1:
             print("Episode: {0}".format(episode))
             print("Mean score over 100 episodes: {0}".format(meanScoreOver100Episodes))
-            agent0_reward = []
-            agent1_reward = []
 
         if episode % saveInterval == 0 and trainMode:
             maddpg.saveModel(model_dir,episode)
