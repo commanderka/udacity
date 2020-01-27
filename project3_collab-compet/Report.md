@@ -2,15 +2,15 @@
 ## Learning Algorithm
 
 I used the Deep Deterministic Policy Gradient algorithm for multiple agents (MADDPG). It is applicable here, because we deal with multiple agents in an episodic environment with continuous action and state space.
-It works in the same way as the DDPG algorithm I applied for the continuous control task (please refer to a description of the DDPG algorithm here : [https://github.com/commanderka/udacity/blob/master/project2_continuous-control/Report.md]), but makes use of critics
+It works in the same way as the DDPG algorithm I applied for the continuous control task (please refer to a description of the DDPG algorithm here : https://github.com/commanderka/udacity/blob/master/project2_continuous-control/Report.md), but makes use of critics
 for each agent which also get the states and actions of the other agent as input. So there are two actor networks (local and target) as well as two critic networks for each agent. The actor only gets
 the local agent observation of the agent as input and predicts the best action, whereas the critic sees the concatenation of actions and states of all agents and predicts the value of the (state,action) tuple from the view
-of the current agent. The following figure taken from [1] illustrates this.
+of the current agent. The following figure taken from [[1]](#1) illustrates this.
 ![]( multi-agent-actor-critic.png)
 The algorithm in pseudocode looks as follows:
 ![]( maddpg_pseudocode.png)
 
-For exploration again an Ornstein Uhlenbeck Noise process is used ([https://en.wikipedia.org/wiki/Ornstein%E2%80%93Uhlenbeck_process]).
+For exploration again an Ornstein Uhlenbeck Noise process is used (https://en.wikipedia.org/wiki/Ornstein%E2%80%93Uhlenbeck_process).
 The network structure of the actor and critic networks are similar to the architecture I used for the continuous control task:
 
 Critic network (Input: (state \* 2,action \* 2), Output: value)
@@ -76,5 +76,7 @@ repos also use the concatenation of all observations as actor input). I found my
 * Impelementation of other algorithms (such as PPO for this task)
 * Solve the football environment as well
 
+##References
+<a id="1">[1]</a>
 [1]: Lowe et al: Multi-Agent Actor-Critic for Mixed Cooperative-Competitive Environments, https://arxiv.org/pdf/1706.02275
 
